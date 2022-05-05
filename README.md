@@ -1,3 +1,33 @@
+# next-stream
+
+## description
+
+Suspense and getId and SSR-Streaming samples
+
+## operation check
+
+<https://next-stream-self.vercel.app/>
+
+## Sample code
+
+- next.config.js
+
+```js
+// @ts-check
+/**
+ * @type { import("next").NextConfig}
+ */
+const config = {
+  experimental: {
+    runtime: "edge",
+  },
+};
+module.exports = config;
+```
+
+- src/pages/index.tsx
+
+```tsx
 import { Suspense, useId, useRef, useState } from "react";
 
 const isServer = typeof window === "undefined";
@@ -57,6 +87,11 @@ const Page = () => {
   return (
     <>
       <div>
+        <a href="https://github.com/SoraKumo001/next-stream">
+          https://github.com/SoraKumo001/next-stream
+        </a>
+      </div>
+      <div>
         {value === undefined ? (
           "Loading"
         ) : (
@@ -69,3 +104,4 @@ const Page = () => {
 };
 
 export default Page;
+```

@@ -2,7 +2,7 @@
 
 ## description
 
-Suspense and getId and SSR-Streaming samples
+Suspense and useId and SSR-Streaming samples
 
 ## operation check
 

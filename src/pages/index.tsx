@@ -57,6 +57,12 @@ const Page = () => {
   return (
     <>
       <div>
+        Source code:
+        <a href="https://github.com/SoraKumo001/next-stream">
+          https://github.com/SoraKumo001/next-stream
+        </a>
+      </div>
+      <div>
         {value === undefined ? (
           "Loading"
         ) : (

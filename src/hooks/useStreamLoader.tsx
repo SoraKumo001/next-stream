@@ -1,33 +1,3 @@
-# next-stream
-
-## description
-
-Suspense and useId and SSR-Streaming samples
-
-## operation check
-
-<https://next-stream-self.vercel.app/>
-
-## Sample code
-
-- next.config.js
-
-```js
-// @ts-check
-/**
- * @type { import("next").NextConfig}
- */
-const config = {
-  experimental: {
-    runtime: "edge",
-  },
-};
-module.exports = config;
-```
-
-- src/hooks/useStreamLoader.tsx
-
-```tsx
 import {
   Suspense,
   useCallback,
@@ -142,37 +112,3 @@ export const useStreamLoader: {
   );
   return { value, isPending, SSRStream, dispatch };
 };
-```
-
-- src/pages/index.tsx
-
-```tsx
-import { useStreamLoader } from "../hooks/useStreamLoader";
-
-const Page = () => {
-  const { value, SSRStream, isPending, dispatch } = useStreamLoader(
-    async (wait: number) => {
-      await new Promise((r) => setTimeout(r, wait));
-      return await fetch(`https://www.jma.go.jp/bosai/common/const/area.json`)
-        .then((r) => r.json())
-        .catch(() => null);
-    },
-    2000
-  );
-  return (
-    <>
-      <button onClick={() => dispatch(2000)}>Reload</button>
-      <div>
-        {isPending ? (
-          "Loading"
-        ) : (
-          <pre>{JSON.stringify(value, undefined, "  ")}</pre>
-        )}
-      </div>
-      {SSRStream}
-    </>
-  );
-};
-
-export default Page;
-```

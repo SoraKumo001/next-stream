@@ -4,14 +4,16 @@ import { useStreamLoader } from "../hooks/useStreamLoader";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const Page = () => {
-  const { value, SSRStream, isPending, dispatch } = useStreamLoader(() =>
-    fetch(`https://www.jma.go.jp/bosai/common/const/area.json`).then(
-      async (r) => {
-        await sleep(2000);
-        return r.json();
-      }
-    )
+  const { value, SSRStream, isPending, dispatch } = useStreamLoader(
+    async () => {
+      // Streaming confirmation wait
+      await sleep(2000);
+      return fetch(`https://www.jma.go.jp/bosai/common/const/area.json`).then(
+        async (r) => r.json()
+      );
+    }
   );
+
   return (
     <>
       <div>
@@ -35,3 +37,5 @@ const Page = () => {
 };
 
 export default Page;
+
+export const runtime = "edge";

@@ -3,7 +3,6 @@ import {
   useCallback,
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -14,7 +13,8 @@ type StreamProperty<T, R> = {
   promise?: Promise<T>;
   isLoaded?: boolean;
   value?: T;
-  param: R;
+  param: R | undefined;
+  loader: (param?: R) => Promise<T>;
 };
 
 const StreamLoader = <T, R>({
@@ -25,7 +25,7 @@ const StreamLoader = <T, R>({
   onPending,
 }: {
   id: string;
-  loader: (param: R) => Promise<T>;
+  loader: (param?: R) => Promise<T>;
   property: StreamProperty<T, R>;
   onLoad: (value: T) => void;
   onPending: (isPending: boolean) => void;
@@ -36,10 +36,10 @@ const StreamLoader = <T, R>({
       if (node) {
         property.isLoaded = true;
         property.value = JSON.parse(node.innerHTML);
-        return property.value;
+        return property.value as T;
       }
     }
-    return property.value;
+    return property.value as T;
   });
 
   if (!property.promise && !property.isLoaded) {
@@ -72,7 +72,7 @@ const StreamLoader = <T, R>({
 
 type ResultType<T> = {
   isPending: boolean;
-  SSRStream: JSX.Element;
+  SSRStream: () => JSX.Element;
   value: T;
 };
 
@@ -87,25 +87,26 @@ export const useStreamLoader: {
   const [isPending, setPending] = useState(true);
   const property = useRef<StreamProperty<T, R>>({
     param: defaultParam,
+    loader,
   }).current;
-  const SSRStream = useMemo(() => {
+  const SSRStream = useCallback(() => {
     return (
       <Suspense>
         <StreamLoader
           id={id}
-          loader={loader}
+          loader={property.loader}
           onPending={setPending}
           onLoad={setValue}
           property={property}
         />
       </Suspense>
     );
-  }, [id, loader, property]);
+  }, [id, property]);
   const dispatch = useCallback(
     (param?: R) => {
       property.isLoaded = false;
       property.promise = undefined;
-      property.param = param;
+      if (param) property.param = param;
       setPending(true);
     },
     [property]

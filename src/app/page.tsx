@@ -1,14 +1,16 @@
+"use client";
 import { useStreamLoader } from "../hooks/useStreamLoader";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 const Page = () => {
-  const { value, SSRStream, isPending, dispatch } = useStreamLoader(
-    async (wait: number) => {
-      await new Promise((r) => setTimeout(r, wait));
-      return await fetch(`https://www.jma.go.jp/bosai/common/const/area.json`)
-        .then((r) => r.json())
-        .catch(() => null);
-    },
-    2000
+  const { value, SSRStream, isPending, dispatch } = useStreamLoader(() =>
+    fetch(`https://www.jma.go.jp/bosai/common/const/area.json`).then(
+      async (r) => {
+        await sleep(2000);
+        return r.json();
+      }
+    )
   );
   return (
     <>
@@ -18,7 +20,7 @@ const Page = () => {
           https://github.com/SoraKumo001/next-stream
         </a>
       </div>
-      <button onClick={() => dispatch(2000)}>Reload</button>
+      <button onClick={() => dispatch()}>Reload</button>
       <div>
         {isPending ? (
           "Loading"
@@ -26,7 +28,8 @@ const Page = () => {
           <pre>{JSON.stringify(value, undefined, "  ")}</pre>
         )}
       </div>
-      {SSRStream}
+      {/* Components for streaming */}
+      <SSRStream />
     </>
   );
 };

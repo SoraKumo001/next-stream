@@ -10,21 +10,6 @@ Suspense and useId and SSR-Streaming samples
 
 ## Sample code
 
-- next.config.js
-
-```js
-// @ts-check
-/**
- * @type { import("next").NextConfig}
- */
-const config = {
-  experimental: {
-    runtime: "edge",
-  },
-};
-module.exports = config;
-```
-
 - src/hooks/useStreamLoader.tsx
 
 ```tsx
@@ -33,7 +18,6 @@ import {
   useCallback,
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -44,7 +28,8 @@ type StreamProperty<T, R> = {
   promise?: Promise<T>;
   isLoaded?: boolean;
   value?: T;
-  param: R;
+  param: R | undefined;
+  loader: (param?: R) => Promise<T>;
 };
 
 const StreamLoader = <T, R>({
@@ -55,7 +40,7 @@ const StreamLoader = <T, R>({
   onPending,
 }: {
   id: string;
-  loader: (param: R) => Promise<T>;
+  loader: (param?: R) => Promise<T>;
   property: StreamProperty<T, R>;
   onLoad: (value: T) => void;
   onPending: (isPending: boolean) => void;
@@ -66,10 +51,10 @@ const StreamLoader = <T, R>({
       if (node) {
         property.isLoaded = true;
         property.value = JSON.parse(node.innerHTML);
-        return property.value;
+        return property.value as T;
       }
     }
-    return property.value;
+    return property.value as T;
   });
 
   if (!property.promise && !property.isLoaded) {
@@ -102,7 +87,7 @@ const StreamLoader = <T, R>({
 
 type ResultType<T> = {
   isPending: boolean;
-  SSRStream: JSX.Element;
+  SSRStream: () => JSX.Element;
   value: T;
 };
 
@@ -117,25 +102,26 @@ export const useStreamLoader: {
   const [isPending, setPending] = useState(true);
   const property = useRef<StreamProperty<T, R>>({
     param: defaultParam,
+    loader,
   }).current;
-  const SSRStream = useMemo(() => {
+  const SSRStream = useCallback(() => {
     return (
       <Suspense>
         <StreamLoader
           id={id}
-          loader={loader}
+          loader={property.loader}
           onPending={setPending}
           onLoad={setValue}
           property={property}
         />
       </Suspense>
     );
-  }, [id, loader, property]);
+  }, [id, property]);
   const dispatch = useCallback(
     (param?: R) => {
       property.isLoaded = false;
       property.promise = undefined;
-      property.param = param;
+      if (param) property.param = param;
       setPending(true);
     },
     [property]
@@ -144,24 +130,32 @@ export const useStreamLoader: {
 };
 ```
 
-- src/pages/index.tsx
+- src/app/page.tsx
 
 ```tsx
+"use client";
 import { useStreamLoader } from "../hooks/useStreamLoader";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 const Page = () => {
-  const { value, SSRStream, isPending, dispatch } = useStreamLoader(
-    async (wait: number) => {
-      await new Promise((r) => setTimeout(r, wait));
-      return await fetch(`https://www.jma.go.jp/bosai/common/const/area.json`)
-        .then((r) => r.json())
-        .catch(() => null);
-    },
-    2000
+  const { value, SSRStream, isPending, dispatch } = useStreamLoader(() =>
+    fetch(`https://www.jma.go.jp/bosai/common/const/area.json`).then(
+      async (r) => {
+        await sleep(2000);
+        return r.json();
+      }
+    )
   );
   return (
     <>
-      <button onClick={() => dispatch(2000)}>Reload</button>
+      <div>
+        Source code:
+        <a href="https://github.com/SoraKumo001/next-stream">
+          https://github.com/SoraKumo001/next-stream
+        </a>
+      </div>
+      <button onClick={() => dispatch()}>Reload</button>
       <div>
         {isPending ? (
           "Loading"
@@ -169,7 +163,8 @@ const Page = () => {
           <pre>{JSON.stringify(value, undefined, "  ")}</pre>
         )}
       </div>
-      {SSRStream}
+      {/* Components for streaming */}
+      <SSRStream />
     </>
   );
 };
